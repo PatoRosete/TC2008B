@@ -24,9 +24,12 @@ import fsGLSL from './fs_vertex_color.glsl?raw';
  * Specifies the objects that will be used, and the UI operations available.
  */
 class RotationScene extends Scene {
+
+    order: string = 'scale -> rotation -> translation';
+
     constructor(gl: WebGL2RenderingContext) {
         super(gl, vsGLSL, fsGLSL);
-
+        
         // Create the objects for this scene
         const model = this.addObject('model', smiley(150),
             [ Math.random(), Math.random(), Math.random(), 1 ]);
@@ -58,13 +61,42 @@ class RotationScene extends Scene {
 
         // Transform matrices for the model
         // TODO: Create the matrices necessary
+        const translateFace: Mat3 = M3.translation(v2_trans);
+        const scaleFace: Mat3 = M3.scale(v2_scale);
+        const pivotCenter: Mat3 = M3.translation(v2_pivot_to_center);
+        const centerPivot: Mat3 = M3.translation(v2_center_to_pivot);
+        const rotateFace: Mat3 = M3.rotation(model.transforms.rr.z);
+        
 
-
+        let rotateAroundPivot: Mat3 = M3.identity();
+        rotateAroundPivot = M3.multiply(pivotCenter, rotateAroundPivot);
+        rotateAroundPivot = M3.multiply(rotateFace, rotateAroundPivot);
+        rotateAroundPivot = M3.multiply(centerPivot, rotateAroundPivot);
 
         // Create a composite transform matrix
         let modelTransforms: Mat3 = M3.identity();
-        // TODO: Multiply the matrices in the correct order to obtain the required results
 
+        if (this.order === 'scale -> rotation -> translation') {
+            modelTransforms = M3.multiply(scaleFace, modelTransforms);
+            modelTransforms = M3.multiply(rotateAroundPivot, modelTransforms);
+            modelTransforms = M3.multiply(translateFace, modelTransforms);
+        } else if (this.order === 'scale -> translation -> rotation') {
+            modelTransforms = M3.multiply(scaleFace, modelTransforms);
+            modelTransforms = M3.multiply(translateFace, modelTransforms);
+            modelTransforms = M3.multiply(rotateAroundPivot, modelTransforms);
+        } else if (this.order === 'translation -> scale -> rotation') {
+            modelTransforms = M3.multiply(translateFace, modelTransforms);
+            modelTransforms = M3.multiply(scaleFace, modelTransforms);
+            modelTransforms = M3.multiply(rotateAroundPivot, modelTransforms);
+        } else if (this.order === 'rotation -> translation -> scale') {
+            modelTransforms = M3.multiply(rotateAroundPivot, modelTransforms);
+            modelTransforms = M3.multiply(translateFace, modelTransforms);
+            modelTransforms = M3.multiply(scaleFace, modelTransforms);
+        } else if (this.order === 'rotation -> scale -> translation') {
+            modelTransforms = M3.multiply(rotateAroundPivot, modelTransforms);
+            modelTransforms = M3.multiply(scaleFace, modelTransforms);
+            modelTransforms = M3.multiply(translateFace, modelTransforms);
+        }
 
 
 
@@ -104,6 +136,14 @@ class RotationScene extends Scene {
         const gui = new GUI();
 
         const modelFolder = gui.addFolder('Model');
+
+        modelFolder.add(this, 'order', [
+            'scale -> rotation -> translation',
+            'scale -> translation -> rotation',
+            'translation -> scale -> rotation',
+            'rotation -> translation -> scale',
+            'rotation -> scale -> translation',
+        ]).name('Orden');
 
         const traFolder = modelFolder.addFolder('Translation');
         traFolder.add(model.transforms.t, 'x', 0, gl.canvas.width)

@@ -7,6 +7,7 @@
  */
 
 // Constants to simplify references to the X, Y and Z axis
+
 const X = 0;
 const Y = 1;
 
@@ -40,6 +41,19 @@ export class V2 {
     // - scale: receives a Vec2, a number and an optional 3rd Vec2.
     //      returns the multiplication of each element of the vector by the scalar
     //      inside the 3rd Vec2
+    static subtract(u: Vec2, v: Vec2, dest?: Vec2): Vec2 {
+        dest = dest || new Float32Array(2);
+        dest[X] = u[X] - v[X];
+        dest[Y] = u[Y] - v[Y];
+        return dest;
+    }
+
+    static scale(u: Vec2, scalar: number, dest?: Vec2): Vec2 {
+        dest = dest || new Float32Array(2);
+        dest[X] = u[X] * scalar;
+        dest[Y] = u[Y] * scalar;
+        return dest;
+    }
 
 }
 
@@ -57,25 +71,31 @@ export class M3 {
     // transformation matrix
 
     static translation(v: Vec2): Mat3 {
+        let tx = v[X];
+        let ty = v[Y];
         return [
             1,  0,  0,
             0,  1,  0,
-            0,  0,  1,
+            tx, ty, 1,
         ];
     }
 
     static rotation(angleRadians: number): Mat3 {
+        const cos = Math.cos(angleRadians);
+        const sin = Math.sin(angleRadians);
         return [
-            1,  0,  0,
-            0,  1,  0,
-            0,  0,  1,
+            cos, sin, 0,
+            -sin, cos, 0,
+            0, 0, 1,
         ];
     }
 
     static scale(v: Vec2): Mat3 {
+        let sx = v[X];
+        let sy = v[Y];
         return [
-            1,  0,  0,
-            0,  1,  0,
+            sx, 0,  0,
+            0,  sy, 0,
             0,  0,  1,
         ];
     }
@@ -113,10 +133,17 @@ export class M3 {
         // must be adjusted accordingly
 
         return [
-            1,  0,  0,
-            0,  1,  0,
-            0,  0,  1,
+            a00 * b00 + a10 * b01 + a20 * b02,
+            a01 * b00 + a11 * b01 + a21 * b02,
+            a02 * b00 + a12 * b01 + a22 * b02,
+
+            a00 * b10 + a10 * b11 + a20 * b12,
+            a01 * b10 + a11 * b11 + a21 * b12,
+            a02 * b10 + a12 * b11 + a22 * b12,
+
+            a00 * b20 + a10 * b21 + a20 * b22,
+            a01 * b20 + a11 * b21 + a21 * b22,
+            a02 * b20 + a12 * b21 + a22 * b22,
         ];
     }
-
 }
